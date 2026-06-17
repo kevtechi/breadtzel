@@ -107,6 +107,17 @@ export async function setEntryHidden(
   await prisma.entry.update({ where: { id: entryId }, data: { hidden } });
 }
 
+/** Manually override the guessed weight (grams) for a single guess. */
+export async function setEntryWeight(
+  entryId: string,
+  weightGuess: number,
+): Promise<void> {
+  await prisma.entry.update({
+    where: { id: entryId },
+    data: { weightGuess },
+  });
+}
+
 /** Persist new BREAD transfers as entries on the current round (idempotent). */
 export async function recordTransfers(
   transfers: BreadTransfer[],

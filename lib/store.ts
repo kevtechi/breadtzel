@@ -101,3 +101,10 @@ export async function setHidden(entryId: string, hidden: boolean): Promise<void>
     () => mockStore.setHidden(entryId, hidden),
   );
 }
+
+export async function setWeight(entryId: string, weight: number): Promise<void> {
+  await liveOrMock(
+    async () => (await import("@/lib/queries")).setEntryWeight(entryId, weight),
+    () => mockStore.setWeight(entryId, weight),
+  );
+}

@@ -172,4 +172,9 @@ export const mockStore = {
     const r = state.records.find((x) => x.id === entryId);
     if (r) r.hidden = hidden;
   },
+
+  setWeight(entryId: string, weightGuess: number) {
+    const r = state.records.find((x) => x.id === entryId);
+    if (r) r.weightGuess = weightGuess;
+  },
 };
