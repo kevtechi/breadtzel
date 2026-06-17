@@ -9,12 +9,12 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    address?: string;
+    entryId?: string;
     displayName?: string;
   };
 
-  if (typeof body.address !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(body.address)) {
-    return Response.json({ error: "invalid address" }, { status: 400 });
+  if (typeof body.entryId !== "string" || !body.entryId) {
+    return Response.json({ error: "invalid entryId" }, { status: 400 });
   }
   const name =
     typeof body.displayName === "string" ? body.displayName.trim().slice(0, 40) : "";
@@ -22,6 +22,6 @@ export async function POST(request: Request) {
     return Response.json({ error: "empty displayName" }, { status: 400 });
   }
 
-  await setName(body.address, name);
+  await setName(body.entryId, name);
   return Response.json({ ok: true });
 }

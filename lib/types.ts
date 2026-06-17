@@ -5,8 +5,10 @@ export interface Entry {
   id: string;
   /** Full 0x address of the sender. */
   address: string;
-  /** On-screen name: admin-tagged, else a shortened address. */
+  /** On-screen name: admin-tagged on this specific tx, else a shortened address. */
   displayName: string;
+  /** Hash of the transaction that placed this guess (for admin identification). */
+  txHash?: string;
   /** Guessed weight in grams (decoded from the BREAD amount). */
   weightGuess: number;
   /** BREAD sent === weightGuess / 10. */

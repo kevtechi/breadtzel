@@ -92,22 +92,23 @@ function NoWinnerBanner({ actual }: { actual: number }) {
 export function Breadtzel({ payment }: { payment: PaymentInfo }) {
   const sound = useSound();
 
-  // One-shot pretzel celebrations, one per active burst id.
-  const [bursts, setBursts] = useState<number[]>([]);
+  // One-shot pretzel celebrations, one per active burst id. Each carries the
+  // name of the player whose guess landed, flashed during the shower.
+  const [bursts, setBursts] = useState<{ id: number; name: string }[]>([]);
   const burstSeq = useRef(0);
-  const spawnBurst = useCallback(() => {
+  const spawnBurst = useCallback((name: string) => {
     const id = (burstSeq.current += 1);
-    setBursts((b) => [...b, id]);
-    setTimeout(() => setBursts((b) => b.filter((x) => x !== id)), BURST_MS);
+    setBursts((b) => [...b, { id, name }]);
+    setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), BURST_MS);
   }, []);
 
   // The display is read-only: all control lives on the protected /admin page.
   // useLottery fires onNewEntry exactly once per new guess (deduped by entry
   // id, which is 1:1 with a tx), so each transfer celebrates exactly once.
   const { state, ranked, winner } = useLottery({
-    onNewEntry: () => {
+    onNewEntry: (e) => {
       sound.coin();
-      spawnBurst();
+      spawnBurst(e.displayName);
     },
   });
 
@@ -158,8 +159,8 @@ export function Breadtzel({ payment }: { payment: PaymentInfo }) {
         </div>
       </main>
 
-      {bursts.map((id) => (
-        <PretzelBurst key={id} />
+      {bursts.map((b) => (
+        <PretzelBurst key={b.id} name={b.name} />
       ))}
 
       {state.phase === "revealed" && winner && <Confetti />}
