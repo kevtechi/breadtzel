@@ -53,7 +53,7 @@ export function SubmitPanel({ payment }: { payment: PaymentInfo }) {
         <p className="tabular rounded-[0.6rem] bg-velvet-deep/60 px-[1rem] py-[0.6rem] text-[1.5rem] text-cream">
           <span className="text-gold-bright">7.5 {payment.tokenSymbol}</span> ={" "}
           <span className="text-gold-bright">75&nbsp;g</span>
-          <span className="text-cream/55"> · 1 {payment.tokenSymbol} = 10&nbsp;g</span>
+          <span className="text-cream/55"> · 1 {payment.tokenSymbol} = 1&nbsp;$ = 1€ = 1 Guess</span>
         </p>
         {payment.receivingAddress ? (
           <p className="tabular break-all text-[1.05rem] text-cream/55">
