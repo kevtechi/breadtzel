@@ -1,0 +1,57 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+interface Bit {
+  id: number;
+  left: number;
+  delay: number;
+  duration: number;
+  size: number;
+}
+
+/**
+ * A short, one-shot shower of pretzels — fired each time a new guess lands.
+ * Distinct from the reveal Confetti (which is a persistent, mixed-glyph
+ * celebration); this is pretzels only and plays once, then the parent unmounts
+ * it. Bits are generated after mount to keep render pure.
+ */
+export function PretzelBurst({ count = 16 }: { count?: number }) {
+  const [bits, setBits] = useState<Bit[]>([]);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setBits(
+        Array.from({ length: count }, (_, i) => ({
+          id: i,
+          left: Math.random() * 100,
+          delay: Math.random() * 0.4,
+          duration: 1.8 + Math.random() * 1.1,
+          size: 1.4 + Math.random() * 2.2,
+        })),
+      );
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [count]);
+
+  return (
+    <div
+      className="pretzel-burst pointer-events-none fixed inset-0 z-40 overflow-hidden"
+      aria-hidden
+    >
+      {bits.map((b) => (
+        <span
+          key={b.id}
+          className="absolute top-0"
+          style={{
+            left: `${b.left}%`,
+            fontSize: `${b.size}rem`,
+            animation: `confetti-fall ${b.duration}s ease-in ${b.delay}s forwards`,
+          }}
+        >
+          🥨
+        </span>
+      ))}
+    </div>
+  );
+}
