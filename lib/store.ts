@@ -88,10 +88,10 @@ export async function startNewRound(): Promise<void> {
   );
 }
 
-export async function setName(address: string, name: string): Promise<void> {
+export async function setName(entryId: string, name: string): Promise<void> {
   await liveOrMock(
-    async () => (await import("@/lib/queries")).setAccountName(address, name),
-    () => mockStore.setName(address, name),
+    async () => (await import("@/lib/queries")).setEntryName(entryId, name),
+    () => mockStore.setName(entryId, name),
   );
 }
 

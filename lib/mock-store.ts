@@ -28,7 +28,10 @@ function randomWeight(): number {
 interface Record {
   id: string;
   address: string;
+  txHash: string;
   baseName: string;
+  /** Admin-assigned name for this specific guess; overrides baseName. */
+  name?: string;
   weightGuess: number;
   amountBread: number;
   timestamp: number;
@@ -40,6 +43,7 @@ function makeRecord(timestamp: number): Record {
   return {
     id: id(),
     address: `0x${hex(40)}`,
+    txHash: `0x${hex(64)}`,
     baseName: Math.random() < 0.55 ? `${pick(WORDS)}.eth` : `${pick(WORDS)}_${Math.floor(Math.random() * 9999)}`,
     weightGuess,
     amountBread: gramsToBread(weightGuess),
@@ -54,7 +58,6 @@ interface MockState {
   actualWeight: number | null;
   winnerId: string | null;
   records: Record[];
-  names: Map<string, string>; // address -> admin override
   lastGen: number;
   nextGap: number;
   spinAt: number; // ms when the current spin started (for auto-reveal)
@@ -71,7 +74,6 @@ function seed(): MockState {
     actualWeight: null,
     winnerId: null,
     records,
-    names: new Map(),
     lastGen: now,
     nextGap: 2500 + Math.random() * 3500,
     spinAt: 0,
@@ -96,7 +98,8 @@ function toEntry(r: Record): Entry {
   return {
     id: r.id,
     address: r.address,
-    displayName: state.names.get(r.address) ?? r.baseName,
+    displayName: r.name ?? r.baseName,
+    txHash: r.txHash,
     weightGuess: r.weightGuess,
     amountBread: r.amountBread,
     timestamp: r.timestamp,
@@ -157,13 +160,12 @@ export const mockStore = {
   },
 
   startNewRound() {
-    const fresh = seed();
-    fresh.names = state.names; // keep admin-assigned names across rounds
-    Object.assign(state, fresh);
+    Object.assign(state, seed());
   },
 
-  setName(address: string, displayName: string) {
-    state.names.set(address.toLowerCase(), displayName);
+  setName(entryId: string, displayName: string) {
+    const r = state.records.find((x) => x.id === entryId);
+    if (r) r.name = displayName;
   },
 
   setHidden(entryId: string, hidden: boolean) {

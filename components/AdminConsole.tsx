@@ -64,10 +64,10 @@ export function AdminConsole() {
   );
 
   const saveName = useCallback(
-    async (address: string) => {
-      const displayName = (drafts[address] ?? "").trim();
+    async (entryId: string) => {
+      const displayName = (drafts[entryId] ?? "").trim();
       if (!displayName) return;
-      await post("/api/admin/name", { address, displayName });
+      await post("/api/admin/name", { entryId, displayName });
     },
     [drafts, post],
   );
@@ -161,8 +161,8 @@ export function AdminConsole() {
             <tr className="text-left text-[0.85rem] uppercase tracking-[0.12em] text-cream/45">
               <th className="py-[0.5rem]">Guess</th>
               <th>BREAD</th>
-              <th>Sender</th>
-              <th>Show as (name the sender)</th>
+              <th>Transaction</th>
+              <th>Show as (name this guess)</th>
               <th className="text-right">On screen</th>
             </tr>
           </thead>
@@ -182,21 +182,35 @@ export function AdminConsole() {
                   )}
                 </td>
                 <td className="tabular text-mint">{formatBread(e.amountBread)}</td>
-                <td className="tabular text-cream/70">{shortenAddress(e.address)}</td>
+                <td className="tabular text-cream/70">
+                  {e.txHash ? (
+                    <a
+                      href={`https://gnosisscan.io/tx/${e.txHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={`${e.txHash} · from ${e.address}`}
+                      className="text-cream/70 underline decoration-gold/30 underline-offset-2 hover:text-cream"
+                    >
+                      {shortenAddress(e.txHash)}
+                    </a>
+                  ) : (
+                    <span title={e.address}>{shortenAddress(e.address)}</span>
+                  )}
+                </td>
                 <td className="flex items-center gap-[0.5rem] py-[0.4rem]">
                   <input
-                    value={drafts[e.address] ?? ""}
+                    value={drafts[e.id] ?? ""}
                     onChange={(ev) =>
-                      setDrafts((d) => ({ ...d, [e.address]: ev.target.value }))
+                      setDrafts((d) => ({ ...d, [e.id]: ev.target.value }))
                     }
                     onKeyDown={(ev) => {
-                      if (ev.key === "Enter") void saveName(e.address);
+                      if (ev.key === "Enter") void saveName(e.id);
                     }}
                     placeholder={e.displayName}
                     className="w-[12rem] rounded border border-gold/30 bg-velvet px-[0.6rem] py-[0.3rem] outline-none focus:border-gold"
                   />
                   <button
-                    onClick={() => saveName(e.address)}
+                    onClick={() => saveName(e.id)}
                     className="rounded bg-gold/90 px-[0.8rem] py-[0.3rem] text-[0.9rem] font-bold uppercase text-velvet-deep hover:bg-gold-bright"
                   >
                     Save

@@ -6,20 +6,12 @@ import { pickWinner, shortenAddress } from "@/lib/format";
 import { SPIN_REVEAL_MS } from "@/lib/config";
 import type { BreadTransfer } from "@/lib/bread-chain";
 
-/** Resolve admin-tagged names for a set of addresses. */
-async function nameMap(addresses: string[]): Promise<Map<string, string>> {
-  if (addresses.length === 0) return new Map();
-  const accounts = await prisma.account.findMany({
-    where: { address: { in: [...new Set(addresses)] } },
-  });
-  return new Map(accounts.map((a) => [a.address, a.displayName]));
-}
-
-function toEntry(row: PrismaEntry, names: Map<string, string>): Entry {
+function toEntry(row: PrismaEntry): Entry {
   return {
     id: row.id,
     address: row.address,
-    displayName: names.get(row.address) ?? shortenAddress(row.address),
+    displayName: row.displayName ?? shortenAddress(row.address),
+    txHash: row.txHash,
     weightGuess: row.weightGuess,
     amountBread: Number(row.amountBread),
     timestamp: row.createdAt.getTime(),
@@ -56,13 +48,12 @@ export async function getRoundState(
       : { roundId: round.id, hidden: false },
     orderBy: { createdAt: "desc" },
   });
-  const names = await nameMap(rows.map((r) => r.address));
   return {
     roundId: round.id,
     phase: round.phase as Phase,
     actualWeight: round.actualWeight,
     winnerId: round.winnerId,
-    entries: rows.map((r) => toEntry(r, names)),
+    entries: rows.map(toEntry),
     live: true,
   };
 }
@@ -83,11 +74,7 @@ export async function completeReveal(): Promise<void> {
   const rows = await prisma.entry.findMany({
     where: { roundId: round.id, hidden: false },
   });
-  const names = await nameMap(rows.map((r) => r.address));
-  const winner = pickWinner(
-    rows.map((r) => toEntry(r, names)),
-    round.actualWeight,
-  );
+  const winner = pickWinner(rows.map(toEntry), round.actualWeight);
   await prisma.round.update({
     where: { id: round.id },
     data: {
@@ -102,15 +89,14 @@ export async function startNewRound(): Promise<void> {
   await prisma.round.create({ data: {} });
 }
 
-export async function setAccountName(
-  address: string,
+/** Tag a single guess (one tx) with a display name. */
+export async function setEntryName(
+  entryId: string,
   displayName: string,
 ): Promise<void> {
-  const addr = address.toLowerCase();
-  await prisma.account.upsert({
-    where: { address: addr },
-    create: { address: addr, displayName },
-    update: { displayName },
+  await prisma.entry.update({
+    where: { id: entryId },
+    data: { displayName },
   });
 }
 

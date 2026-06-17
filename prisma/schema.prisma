@@ -39,8 +39,13 @@ model Entry {
   id          String   @id @default(cuid())
   roundId     String
   round       Round    @relation("RoundEntries", fields: [roundId], references: [id], onDelete: Cascade)
-  /// Sender (the transfer's `from`). Display name is resolved via Account.
+  /// Sender (the transfer's `from`). Informational only — guesses are tagged
+  /// per-transaction, not per-sender, since players may pay in XDAI from any
+  /// wallet and the team swaps to BREAD manually.
   address     String
+  /// Admin-assigned display name for THIS guess (this tx). Falls back to a
+  /// shortened sender address on the display when unset.
+  displayName String?
   weightGuess Int
   amountBread Decimal  @db.Decimal(36, 18)
   /// Admin can hide a guess; hidden guesses are excluded from the public
@@ -56,13 +61,6 @@ model Entry {
 
   @@index([roundId, createdAt])
   @@index([address])
-}
-
-/// Admin-assigned display name for a sender address ("tagging").
-model Account {
-  address     String   @id
-  displayName String
-  updatedAt   DateTime @updatedAt
 }
 
 /// Singleton row tracking the last Gnosis block we've ingested transfers up to.
