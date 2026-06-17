@@ -19,6 +19,7 @@ export function AdminConsole() {
   const [state, setState] = useState<RoundState | null>(null);
   const [weight, setWeight] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [weightDrafts, setWeightDrafts] = useState<Record<string, string>>({});
 
   const refresh = useCallback(async () => {
     const s = await getAdminState();
@@ -76,6 +77,20 @@ export function AdminConsole() {
     (entryId: string, hidden: boolean) =>
       post("/api/admin/hide", { entryId, hidden }),
     [post],
+  );
+
+  const saveWeight = useCallback(
+    async (entryId: string) => {
+      const weightGuess = Math.round(Number(weightDrafts[entryId]));
+      if (!Number.isFinite(weightGuess) || weightGuess <= 0) return;
+      await post("/api/admin/weight", { entryId, weightGuess });
+      setWeightDrafts((d) => {
+        const next = { ...d };
+        delete next[entryId];
+        return next;
+      });
+    },
+    [weightDrafts, post],
   );
 
   const logout = useCallback(async () => {
@@ -173,13 +188,35 @@ export function AdminConsole() {
                 className="border-t border-gold/10"
                 style={{ opacity: e.hidden ? 0.45 : 1 }}
               >
-                <td className="tabular py-[0.6rem] text-[1.3rem] font-bold text-gold-bright">
-                  {formatGrams(e.weightGuess)}
-                  {e.hidden && (
-                    <span className="ml-[0.5rem] align-middle text-[0.8rem] font-normal uppercase tracking-[0.1em] text-berry">
-                      hidden
-                    </span>
-                  )}
+                <td className="py-[0.6rem]">
+                  <div className="flex items-center gap-[0.4rem]">
+                    <input
+                      type="number"
+                      value={weightDrafts[e.id] ?? String(e.weightGuess)}
+                      onChange={(ev) =>
+                        setWeightDrafts((d) => ({ ...d, [e.id]: ev.target.value }))
+                      }
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter") void saveWeight(e.id);
+                      }}
+                      className="tabular w-[5rem] rounded border border-gold/30 bg-velvet px-[0.5rem] py-[0.3rem] text-[1.3rem] font-bold text-gold-bright outline-none focus:border-gold"
+                    />
+                    <span className="text-[0.95rem] text-cream/50">g</span>
+                    {weightDrafts[e.id] != null &&
+                      Math.round(Number(weightDrafts[e.id])) !== e.weightGuess && (
+                        <button
+                          onClick={() => saveWeight(e.id)}
+                          className="rounded bg-gold/90 px-[0.7rem] py-[0.3rem] text-[0.85rem] font-bold uppercase text-velvet-deep hover:bg-gold-bright"
+                        >
+                          Set
+                        </button>
+                      )}
+                    {e.hidden && (
+                      <span className="ml-[0.2rem] text-[0.8rem] font-normal uppercase tracking-[0.1em] text-berry">
+                        hidden
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="tabular text-mint">{formatBread(e.amountBread)}</td>
                 <td className="tabular text-cream/70">
