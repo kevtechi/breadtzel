@@ -1,0 +1,73 @@
+// Breadtzel persistence layer.
+// Prisma 7: the client is generated to ./generated/prisma and the datasource
+// URL is supplied via prisma.config.ts (loaded from .env), not here.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoundPhase {
+  open
+  spinning
+  revealed
+}
+
+/// A lottery round. The display reads the latest round; the operator's
+/// spin/reveal lifecycle is persisted so the screen survives a reload.
+model Round {
+  id           String     @id @default(cuid())
+  phase        RoundPhase @default(open)
+  /// Real measured pretzel weight in grams, known only once revealed.
+  actualWeight Int?
+  /// Winning entry (closest guess), set on reveal. One winner per round.
+  winnerId     String?    @unique
+  winner       Entry?     @relation("RoundWinner", fields: [winnerId], references: [id])
+  entries      Entry[]    @relation("RoundEntries")
+  createdAt    DateTime   @default(now())
+  revealedAt   DateTime?
+  updatedAt    DateTime   @updatedAt
+}
+
+/// One guess = one incoming BREAD transfer.
+/// weightGuess (g) = amountBread * 10; amountBread = weightGuess / 10.
+model Entry {
+  id          String   @id @default(cuid())
+  roundId     String
+  round       Round    @relation("RoundEntries", fields: [roundId], references: [id], onDelete: Cascade)
+  /// Sender (the transfer's `from`). Display name is resolved via Account.
+  address     String
+  weightGuess Int
+  amountBread Decimal  @db.Decimal(36, 18)
+  /// Admin can hide a guess; hidden guesses are excluded from the public
+  /// display, the pot, and winner selection (but stay visible in /admin).
+  hidden      Boolean  @default(false)
+  /// Alchemy Transfers API uniqueId (e.g. "0xhash:log:33") — idempotency key.
+  transferId  String   @unique
+  txHash      String
+  blockNumber BigInt
+  createdAt   DateTime @default(now())
+  /// Back-relation: the round this entry won, if any.
+  wonRound    Round?   @relation("RoundWinner")
+
+  @@index([roundId, createdAt])
+  @@index([address])
+}
+
+/// Admin-assigned display name for a sender address ("tagging").
+model Account {
+  address     String   @id
+  displayName String
+  updatedAt   DateTime @updatedAt
+}
+
+/// Singleton row tracking the last Gnosis block we've ingested transfers up to.
+model IngestCursor {
+  id        String   @id @default("bread")
+  lastBlock BigInt
+  updatedAt DateTime @updatedAt
+}

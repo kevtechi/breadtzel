@@ -1,26 +1,225 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /*
+   * Palette from the bread.coop brand (https://bread.coop). Token names are
+   * kept from the original design; values are repointed to brand colors so
+   * every utility (text-gold, bg-velvet, etc.) re-skins centrally.
+   *   gold*  -> primary orange (hero accent)
+   *   velvet -> jade/ink stage surfaces
+   *   pretzel-> deep orange / surface brown
+   *   cream  -> paper, mint -> jade, berry -> system red
+   */
+  --color-velvet: #14241f; /* deep jade-ink stage */
+  --color-velvet-deep: #0b1410; /* darker stage */
+  --color-gold: #ea6023; /* brand primary-orange */
+  --color-gold-bright: #ffc080; /* brand orange-0 highlight */
+  --color-pretzel: #d14a0f; /* brand orange-1 */
+  --color-pretzel-dark: #513c35; /* brand surface-brown */
+  --color-cream: #f6f3eb; /* brand paper-main */
+  --color-berry: #df0b00; /* brand system-red */
+  --color-mint: #4fb39e; /* lightened brand jade */
+  --color-jade: #286b63; /* brand primary-jade */
+  --color-blue: #588ddb; /* brand blue-1 */
+
+  --font-display: var(--font-display), system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+ * The whole UI is sized in rem and the root font-size tracks viewport height,
+ * so the layout fills a 16:9 screen and scales smoothly from 1080p up to 4K
+ * without media queries.
+ */
+:root {
+  font-size: clamp(12px, 1.05vh, 30px);
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-cream);
+  background:
+    radial-gradient(
+      120% 90% at 50% -10%,
+      #1f3b33 0%,
+      var(--color-velvet) 45%,
+      var(--color-velvet-deep) 100%
+    );
+  font-family: var(--font-sans);
+}
+
+/* Subtle sheen so the big dark areas aren't flat (orange + jade glow). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 20% 0%, rgba(234, 96, 35, 0.1), transparent 70%),
+    radial-gradient(50% 40% at 90% 100%, rgba(40, 107, 99, 0.14), transparent 70%);
+}
+
+/* --- animations ---------------------------------------------------------- */
+
+@keyframes shine {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    filter: drop-shadow(0 0 0.6rem var(--color-gold));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 1.6rem var(--color-gold-bright));
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-1.2rem) rotate(3deg);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    transform: translateY(1.4rem) scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes win-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0.15rem var(--color-gold), 0 0 2.5rem rgba(234, 96, 35, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 0.3rem var(--color-gold-bright),
+      0 0 4rem rgba(255, 192, 128, 0.95);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0.9;
+  }
+}
+
+@keyframes marquee-bulb {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* --- reusable bits ------------------------------------------------------- */
+
+.text-shine {
+  background: linear-gradient(
+    100deg,
+    var(--color-gold) 0%,
+    var(--color-gold-bright) 25%,
+    #fff1ea 45%,
+    var(--color-gold-bright) 65%,
+    var(--color-gold) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine 5s linear infinite;
+}
+
+.panel {
+  border: 0.12rem solid rgba(234, 96, 35, 0.35);
+  border-radius: 1.2rem;
+  background: linear-gradient(
+    180deg,
+    rgba(31, 59, 51, 0.85),
+    rgba(11, 20, 16, 0.92)
+  );
+  box-shadow:
+    inset 0 0 2rem rgba(0, 0, 0, 0.5),
+    0 0 1.5rem rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* --- slot reels ---------------------------------------------------------- */
+
+.reel-window {
+  --reel-h: 13rem;
+  width: 9rem;
+  height: var(--reel-h);
+  overflow: hidden;
+  border-radius: 0.8rem;
+  background: linear-gradient(180deg, #fdfcf9 0%, #eae2d6 50%, #fdfcf9 100%);
+  box-shadow:
+    inset 0 1.2rem 1.2rem -0.6rem rgba(0, 0, 0, 0.55),
+    inset 0 -1.2rem 1.2rem -0.6rem rgba(0, 0, 0, 0.55),
+    0 0 0 0.18rem var(--color-pretzel-dark);
+  position: relative;
+}
+
+.reel-strip {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+.reel-cell {
+  height: var(--reel-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 9rem;
+  line-height: 1;
+  color: var(--color-pretzel-dark);
+  text-shadow: 0 0.15rem 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Light bulbs running around the marquee frame. */
+.bulb {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: var(--color-gold-bright);
+  box-shadow: 0 0 0.5rem var(--color-gold-bright);
+  animation: marquee-bulb 1.1s ease-in-out infinite;
 }
